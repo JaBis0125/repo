@@ -1,14 +1,28 @@
 ---
-- name: 웹서버 
-  gather_facts: yes
-  become: yes
-  hosts: all
+- name: Clone or Update and Manage Apache Web Server
+  hosts: localhost
+  become: true  # Privilege escalation to become root
 
+  tasks:
 
+    - name: CentOS > httpd
+      action: "{{ ansible_pkg_mgr }} name=httpd state=present"
 
-- name: Just get information about the repository whether or not it has already been cloned locally
-  ansible.builtin.git:
-    repo: 'https://foosball.example.org/path/to/repo.git'
-    dest: /srv/checkout
-    clone: no
-    update: no
+    - name: Clone or Update Git Repository
+      ansible.builtin.git:
+        repo: 'https://github.com/JaBis0125/repo.git'
+        dest: /var/www/html/ansiblelab3
+        clone: yes
+        update: yes
+      register: git_output
+
+    - name: Restart Apache if Changes Detected
+      ansible.builtin.systemd:
+        name: httpd
+        state: restarted
+      when: git_output.changed
+
+    - name: Debug Git Output
+      ansible.builtin.debug:
+        var: git_output
+
